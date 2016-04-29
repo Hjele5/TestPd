@@ -45,7 +45,9 @@ public class MainActivity extends AppCompatActivity {
         weatherSwitch.setOnCheckedChangeListener(new OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
-                boolean weather = true;
+                float val = (b) ? 1.0f : 0.0f;
+                PdBase.sendFloat("modOnOff",val);
+
             }
         });
     }
@@ -57,15 +59,17 @@ public class MainActivity extends AppCompatActivity {
             public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
                     float vul = (b) ? 1.0f : 0.0f;
                     PdBase.sendFloat("songOn", vul);
-                    float val = (b) ? 1.0f : 0.0f;
-                    PdBase.sendFloat("onOff", val);
+                    PdBase.sendFloat("onOff", vul);
+                    PdBase.sendFloat("musicPlay",vul);
+                    PdBase.sendFloat("volumeAdjustment", vul);
+                    PdBase.sendFloat("modOff", vul);
                 }});
     }
 
     private void loadPDPatch() throws IOException {
         File dir = getFilesDir();
-        IoUtils.extractZipResource(getResources().openRawResource(R.raw.testpatch),dir,true);
-        File pdPatch = new File(dir,"testpatch.pd");
+        IoUtils.extractZipResource(getResources().openRawResource(R.raw.highpass),dir,true);
+        File pdPatch = new File(dir,"highpass.pd");
         PdBase.openPatch(pdPatch.getAbsolutePath());
 
     }

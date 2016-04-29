@@ -1,5 +1,9 @@
 package com.example.hjalte.testpd;
 
+import android.content.ComponentName;
+import android.content.Intent;
+import android.content.ServiceConnection;
+import android.os.IBinder;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -12,6 +16,7 @@ import android.widget.Toast;
 
 import org.puredata.android.io.AudioParameters;
 import org.puredata.android.io.PdAudio;
+import org.puredata.android.service.PdService;
 import org.puredata.android.utils.PdUiDispatcher;
 import org.puredata.core.PdBase;
 import org.puredata.core.utils.IoUtils;
@@ -22,6 +27,7 @@ import java.io.IOException;
 public class MainActivity extends AppCompatActivity {
 
     boolean weather = false;
+    private PdService pdService = null;
 
     private PdUiDispatcher dispatcher;
 
@@ -34,7 +40,8 @@ public class MainActivity extends AppCompatActivity {
 
     private void initPD() throws IOException{
         int sampleRate = AudioParameters.suggestSampleRate();
-        PdAudio.initAudio(sampleRate,0,2,8,true);
+        pdService.initAudio(sampleRate,0,2,8);
+        pdService.startAudio();
 
         dispatcher = new PdUiDispatcher();
         PdBase.setReceiver(dispatcher);
@@ -74,32 +81,39 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    private final ServiceConnection pdConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            pdService = ((PdService.PdBinder)service).getService();
+            try{
+                initPD();
+                loadPDPatch();
+            } catch (IOException e) {
+                e.printStackTrace();
+                finish();
+
+            }}
+
+            @Override
+            public void onServiceDisconnected(ComponentName name){
+
+        }
+    };
+
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        try{
-            initPD();
-            loadPDPatch();
-        }catch (IOException e){
-            finish();
-        }
         initGUI();
         initGUI1();
+        bindService(new Intent(this,PdService.class),pdConnection,BIND_AUTO_CREATE);
     }
 
     @Override
-    protected void onResume(){
-        super.onResume();
-        PdAudio.startAudio(this);
-    }
-
-    @Override
-    protected  void onPause(){
-        super.onPause();
-        PdAudio.stopAudio();
+    public void onDestroy(){
+        super.onDestroy();
+        unbindService(pdConnection);
     }
 }
